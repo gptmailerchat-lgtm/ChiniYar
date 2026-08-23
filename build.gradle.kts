@@ -1,14 +1,5 @@
-// ChiniYar build configuration.
-// Direct plugin artifacts are used instead of plugin marker resolution.
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath("com.android.tools.build:gradle:9.3.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21")
-        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.21")
-    }
+plugins {
+    id("com.android.application") version "9.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.3.21" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
 }
