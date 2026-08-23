@@ -24,7 +24,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -34,17 +33,20 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew
+      - name: Set up Gradle 9.5
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5'
+          validate-wrappers: false
 
       - name: Verify Gradle
-        run: ./gradlew --version
+        run: gradle --version
 
       - name: Clean
-        run: ./gradlew --no-daemon clean
+        run: gradle --no-daemon clean
 
       - name: Build Debug APK
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
 
       - name: Verify APK exists
         run: test -s app/build/outputs/apk/debug/app-debug.apk
