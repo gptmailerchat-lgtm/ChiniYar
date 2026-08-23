@@ -3,7 +3,6 @@ package com.chiniyar.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -33,7 +32,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +53,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -191,7 +188,7 @@ private fun TranslateScreen(modifier: Modifier) {
             busy = true
             try {
                 if (!modelReady) {
-                    translator.downloadModel(DownloadConditions.Builder().build()).await()
+                    translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
                     modelReady = true
                 }
                 translatedText = translator.translate(recognizedText).await()
