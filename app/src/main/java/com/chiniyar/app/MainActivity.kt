@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +61,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
@@ -137,7 +138,7 @@ private val metroCities = listOf(
         MetroLine("10", Color(0xFF7E57C2), listOf("虹桥火车站", "上海动物园", "南京东路", "豫园", "新天地"), listOf(.10f to .78f, .20f to .65f, .52f to .40f, .60f to .58f, .50f to .78f)),
         MetroLine("11", Color(0xFF8D6E63), listOf("上海赛车场", "徐家汇", "交通大学", "迪士尼"), listOf(.12f to .20f, .34f to .32f, .48f to .50f, .84f to .82f))
     )),
-    MetroCity("Beijing", "北京", "https://zh.beijingmap360.com/%E5%8C%97%E4%BA%AC%28peking%29-%E5%9F%8E%E5%B8%82%E5%9C%B0%E5%9B%BE", listOf(
+    MetroCity("Beijing", "北京", "https://zh.beijingmap360.com/", listOf(
         MetroLine("1", Color(0xFFD32F2F), listOf("苹果园", "天安门西", "天安门东", "王府井", "国贸"), listOf(.08f to .45f, .34f to .45f, .50f to .45f, .66f to .45f, .84f to .45f)),
         MetroLine("2", Color(0xFF1976D2), listOf("西直门", "复兴门", "北京站", "建国门", "东直门"), listOf(.18f to .25f, .30f to .25f, .58f to .25f, .72f to .25f, .82f to .16f)),
         MetroLine("10", Color(0xFF00897B), listOf("巴沟", "海淀黄庄", "国贸", "三元桥", "知春路"), listOf(.16f to .76f, .34f to .64f, .58f to .54f, .76f to .66f, .60f to .82f))
@@ -225,7 +226,7 @@ private fun HomeScreen(modifier: Modifier) {
             item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(18.dp)) {
                 Text("برای سفر به چین آماده‌ای؟", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text("OCR چینی، ترجمه، عبارات کاربردی، تلفظ و نقشه‌های شماتیک مترو در یک اپ.")
+                Text("OCR چینی، ترجمه، عبارات کاربردی، تلفظ و نقشه‌های آفلاین مترو در یک اپ.")
             }}}
             item {
                 Card(Modifier.fillMaxWidth().clickable { openUrl(context, YAJING_URL) }, shape = RoundedCornerShape(20.dp)) {
@@ -254,6 +255,7 @@ private fun TranslateScreen(modifier: Modifier) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var modelReady by remember { mutableStateOf(false) }
+
     val recognizer = remember { TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build()) }
     val translator = remember { Translation.getClient(TranslatorOptions.Builder().setSourceLanguage(TranslateLanguage.CHINESE).setTargetLanguage(TranslateLanguage.PERSIAN).build()) }
 
@@ -268,8 +270,11 @@ private fun TranslateScreen(modifier: Modifier) {
                 recognizedText = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text.trim()
                 translatedText = ""
                 message = if (recognizedText.isBlank()) "متن چینی پیدا نشد." else "متن شناسایی شد."
-            } catch (e: Exception) { message = "خطا در OCR: ${e.message ?: "نامشخص"}" }
-            finally { busy = false }
+            } catch (e: Exception) {
+                message = "خطا در OCR: ${e.message ?: "نامشخص"}"
+            } finally {
+                busy = false
+            }
         }
     }
 
@@ -283,12 +288,16 @@ private fun TranslateScreen(modifier: Modifier) {
                     modelReady = true
                 }
                 translatedText = translator.translate(recognizedText).await()
-            } catch (e: Exception) { message = "ترجمه انجام نشد: ${e.message ?: "نامشخص"}" }
-            finally { busy = false }
+            } catch (e: Exception) {
+                message = "ترجمه انجام نشد: ${e.message ?: "نامشخص"}"
+            } finally {
+                busy = false
+            }
         }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let(::processUri) }
+
     LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("مترجم تصویری چینی", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("یک عکس از نوشته چینی انتخاب کنید.") }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -298,10 +307,14 @@ private fun TranslateScreen(modifier: Modifier) {
         imageBitmap?.let { bitmap -> item { Image(bitmap.asImageBitmap(), "تصویر انتخاب‌شده", Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp)), contentScale = ContentScale.Crop) } }
         if (recognizedText.isNotBlank()) item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
             Text("متن چینی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(recognizedText)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TextButton(onClick = { copy(context, recognizedText) }) { Text("کپی") }; TextButton(onClick = { speakChinese(context, recognizedText) }) { Text("🔊") } }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { copy(context, recognizedText) }) { Text("کپی") }
+                TextButton(onClick = { speakChinese(context, recognizedText) }) { Text("🔊") }
+            }
         }}}
         if (translatedText.isNotBlank()) item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-            Text("ترجمه فارسی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(translatedText); TextButton(onClick = { copy(context, translatedText) }) { Text("کپی") }
+            Text("ترجمه فارسی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(translatedText)
+            TextButton(onClick = { copy(context, translatedText) }) { Text("کپی") }
         }}}
         if (message.isNotBlank()) item { Text(message) }
         if (busy) item { Text("در حال پردازش…") }
@@ -313,13 +326,15 @@ private fun PhraseScreen(modifier: Modifier) {
     val context = LocalContext.current
     LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("عبارات کاربردی", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("بیش از ۳۰ عبارت برای سفر، خرید و تجارت") }
-        items(phrases) { phrase -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-            Text(phrase.zh, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text(phrase.pinyin, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(4.dp)); Text(phrase.fa)
-            Text(phrase.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { speakChinese(context, phrase.zh) }) { Text("🔊 تلفظ") }
-        }}}
+        items(phrases) { phrase ->
+            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+                Text(phrase.zh, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(phrase.pinyin, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(4.dp)); Text(phrase.fa)
+                Text(phrase.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { speakChinese(context, phrase.zh) }) { Text("🔊 تلفظ") }
+            }}
+        }
     }
 }
 
@@ -330,18 +345,20 @@ private fun MetroScreen(modifier: Modifier) {
     val city = metroCities[selectedCity]
     ScenicBackground {
         LazyColumn(modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { Text("نقشه مترو ۵ شهر مهم چین", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("نقشه‌ها شماتیک و مناسب راهنمای سریع هستند.") }
+            item { Text("نقشه متروی آفلاین ۵ شهر مهم چین", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("نام تمام ایستگاه‌های نمایش‌داده‌شده مستقیم روی نقشه نوشته شده است.") }
             item { Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 metroCities.forEachIndexed { index, item -> TextButton(onClick = { selectedCity = index }) { Text(if (selectedCity == index) "● ${item.name}" else item.name) } }
             }}
-            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
+            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(10.dp)) {
                 Text("${city.name}  ${city.zh}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(8.dp)); MetroMap(city); Spacer(Modifier.height(8.dp))
-                Button(onClick = { openUrl(context, city.mapUrl) }) { Text("نقشه به‌روز آنلاین") }
-                Text("منبع نقشه: ${city.mapUrl}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                MetroMap(city)
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = { openUrl(context, city.mapUrl) }) { Text("نقشه کامل آنلاین") }
+                Text("راهنمای داخل اپ کاملاً آفلاین است؛ لینک بالا فقط برای نقشه کامل آنلاین است.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }}}
             item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-                Text("ایستگاه‌های کلیدی", fontWeight = FontWeight.Bold)
+                Text("ایستگاه‌های این نسخه", fontWeight = FontWeight.Bold)
                 city.lines.forEach { line -> Text("خط ${line.name}: ${line.stations.joinToString(" ← ")}", fontSize = 13.sp) }
             }}}
         }
@@ -350,20 +367,38 @@ private fun MetroScreen(modifier: Modifier) {
 
 @Composable
 private fun MetroMap(city: MetroCity) {
-    Canvas(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(18.dp)).background(Color.White)) {
-        city.lines.forEach { line ->
+    Canvas(Modifier.fillMaxWidth().height(430.dp).clip(RoundedCornerShape(18.dp)).background(Color.White)) {
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color(0xFF222222).toArgb()
+            textSize = 11.dp.toPx()
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+        city.lines.forEachIndexed { lineIndex, line ->
             val points = line.route.map { Offset(it.first * size.width, it.second * size.height) }
             for (i in 0 until points.size - 1) {
                 drawLine(line.color, points[i], points[i + 1], 10f, StrokeCap.Round)
                 drawLine(Color.White, points[i], points[i + 1], 3f, StrokeCap.Round)
             }
-            points.forEachIndexed { index, point ->
-                drawCircle(Color.White, 7f, point)
+            points.forEachIndexed { stationIndex, point ->
+                drawCircle(Color.White, 8f, point)
                 drawCircle(line.color, 5f, point)
-                if (index % 2 == 0) drawCircle(line.color.copy(alpha = .18f), 15f, point, style = Stroke(width = 2f))
+                drawCircle(line.color.copy(alpha = .15f), 16f, point, style = Stroke(width = 2f))
+
+                val stationName = line.stations.getOrNull(stationIndex).orEmpty()
+                if (stationName.isNotEmpty()) {
+                    val labelOffsetY = if ((stationIndex + lineIndex) % 2 == 0) -12f else 20f
+                    val labelOffsetX = if (point.x < size.width * .55f) 9f else -9f
+                    labelPaint.textAlign = if (point.x < size.width * .55f) Paint.Align.LEFT else Paint.Align.RIGHT
+                    drawContext.canvas.nativeCanvas.drawText(
+                        stationName,
+                        point.x + labelOffsetX,
+                        point.y + labelOffsetY,
+                        labelPaint
+                    )
+                }
             }
         }
-        drawRect(Color(0xFFEFEFEF), style = Stroke(width = 2f))
+        drawRect(Color(0xFFE0E0E0), style = Stroke(width = 2f))
     }
 }
 
@@ -372,16 +407,20 @@ private fun ChinaScreen(modifier: Modifier) {
     ScenicBackground {
         LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Text("شهرهای مهم چین", fontSize = 24.sp, fontWeight = FontWeight.Bold) }
-            items(cities) { city -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                Text("${city.fa}  ${city.zh}", fontSize = 21.sp, fontWeight = FontWeight.Bold)
-                Text(city.en, color = MaterialTheme.colorScheme.primary); Spacer(Modifier.height(6.dp)); Text(city.desc)
-            }}}
+            items(cities) { city ->
+                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+                    Text("${city.fa}  ${city.zh}", fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text(city.en, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(6.dp))
+                    Text(city.desc)
+                }}
+            }
         }
     }
 }
 
 private fun openUrl(context: Context, url: String) {
-    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
 }
 
 private fun copy(context: Context, text: String) {
@@ -396,7 +435,9 @@ private fun speakChinese(context: Context, text: String) {
             val language = tts.setLanguage(Locale.SIMPLIFIED_CHINESE)
             if (language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED) {
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "chiniyar-${System.currentTimeMillis()}")
-            } else tts.shutdown()
+            } else {
+                tts.shutdown()
+            }
         }
     }
 }
