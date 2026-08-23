@@ -1,15 +1,17 @@
-apply(plugin = "com.android.application")
-apply(plugin = "org.jetbrains.kotlin.android")
-apply(plugin = "org.jetbrains.kotlin.plugin.compose")
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+}
 
 android {
     namespace = "com.chiniyar.app"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.chiniyar.app"
         minSdk = 23
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 4
         versionName = "0.4.0"
     }
