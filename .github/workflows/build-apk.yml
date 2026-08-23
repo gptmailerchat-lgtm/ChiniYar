@@ -48,17 +48,20 @@ jobs:
       - name: Clean
         run: gradle --no-daemon clean
 
-      - name: Build Debug APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Build compact signed Release APK
+        run: gradle --no-daemon --stacktrace :app:assembleRelease
 
       - name: Verify APK exists
-        run: test -s app/build/outputs/apk/debug/app-debug.apk
+        run: test -s app/build/outputs/apk/release/app-release.apk
 
-      - name: Upload Debug APK
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk ChiniYar-v0.5.${GITHUB_RUN_NUMBER}.apk
+
+      - name: Upload compact APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chiniyar-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: chiniyar-release-apk
+          path: ChiniYar-v0.5.${{ github.run_number }}.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -67,9 +70,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v0.4.${GITHUB_RUN_NUMBER}"
+          TAG="v0.5.${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" \
-            app/build/outputs/apk/debug/app-debug.apk \
+            "ChiniYar-v0.5.${GITHUB_RUN_NUMBER}.apk" \
             --title "ChiniYar $TAG" \
-            --notes "ChiniYar Android APK release. Built automatically from main commit ${GITHUB_SHA}." \
+            --notes "ChiniYar Android release. Includes compact R8-shrunk APK, on-demand OCR model, offline metro maps with station labels, Yajing Chinese branding, and 30+ practical phrases. Built from ${GITHUB_SHA}." \
             --latest
