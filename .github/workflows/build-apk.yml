@@ -31,7 +31,7 @@ jobs:
       - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-37" "build-tools;36.0.0"
+          sdkmanager --channel=1 "platform-tools" "platforms;android-37" "build-tools;37.0.0"
 
       - name: Set up Gradle 9.5.0
         uses: gradle/actions/setup-gradle@v6
@@ -43,7 +43,7 @@ jobs:
         run: |
           java -version
           gradle --version
-          sdkmanager --list_installed | grep -E "platforms;android-37|build-tools;36.0.0|platform-tools" || true
+          sdkmanager --list_installed | grep -E "platforms;android-37|build-tools;37.0.0|platform-tools"
 
       - name: Clean
         run: gradle --no-daemon clean
