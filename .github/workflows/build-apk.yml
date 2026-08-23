@@ -34,10 +34,8 @@ jobs:
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.5'
+      - name: Check Gradle
+        run: gradle --version
 
       - name: Build Debug APK
         run: gradle --no-daemon --stacktrace :app:assembleDebug
