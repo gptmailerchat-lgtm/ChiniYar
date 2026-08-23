@@ -21,12 +21,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -165,17 +163,15 @@ private val metroCities = listOf(
 fun ChiniYarApp() {
     MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFFC62828), secondary = Color(0xFFD97706))) {
         var selectedTab by remember { mutableIntStateOf(0) }
-        Scaffold(
-            bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Text("⌂") }, label = { Text("خانه") })
-                    NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Text("📷") }, label = { Text("مترجم") })
-                    NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Text("🀄") }, label = { Text("عبارات") })
-                    NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Text("🚇") }, label = { Text("مترو") })
-                    NavigationBarItem(selected = selectedTab == 4, onClick = { selectedTab = 4 }, icon = { Text("🇨🇳") }, label = { Text("چین") })
-                }
+        Scaffold(bottomBar = {
+            NavigationBar {
+                NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Text("⌂") }, label = { Text("خانه") })
+                NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Text("📷") }, label = { Text("مترجم") })
+                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Text("🀄") }, label = { Text("عبارات") })
+                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Text("🚇") }, label = { Text("مترو") })
+                NavigationBarItem(selected = selectedTab == 4, onClick = { selectedTab = 4 }, icon = { Text("🇨🇳") }, label = { Text("چین") })
             }
-        ) { padding ->
+        }) { padding ->
             when (selectedTab) {
                 0 -> HomeScreen(Modifier.padding(padding))
                 1 -> TranslateScreen(Modifier.padding(padding))
@@ -216,6 +212,7 @@ private fun ScenicBackground(content: @Composable () -> Unit) {
 
 @Composable
 private fun HomeScreen(modifier: Modifier) {
+    val context = LocalContext.current
     ScenicBackground {
         LazyColumn(modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
@@ -225,20 +222,13 @@ private fun HomeScreen(modifier: Modifier) {
                     Text("دستیار سفر، مکالمه و ترجمه چینی")
                 }
             }
+            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(18.dp)) {
+                Text("برای سفر به چین آماده‌ای؟", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text("OCR چینی، ترجمه، عبارات کاربردی، تلفظ و نقشه‌های شماتیک مترو در یک اپ.")
+            }}}
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp)) {
-                        Text("برای سفر به چین آماده‌ای؟", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(8.dp))
-                        Text("OCR چینی، ترجمه، عبارات کاربردی، تلفظ و نقشه‌های شماتیک مترو در یک اپ.")
-                    }
-                }
-            }
-            item {
-                Card(
-                    Modifier.fillMaxWidth().clickable { openUrl(LocalContext.current, YAJING_URL) },
-                    shape = RoundedCornerShape(20.dp)
-                ) {
+                Card(Modifier.fillMaxWidth().clickable { openUrl(context, YAJING_URL) }, shape = RoundedCornerShape(20.dp)) {
                     Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFFB71C1C), Color(0xFFE65100)))).padding(18.dp)) {
                         Column {
                             Text("🎓 آموزش زبان چینی با Yajing Chinese", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -264,15 +254,10 @@ private fun TranslateScreen(modifier: Modifier) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var modelReady by remember { mutableStateOf(false) }
-
     val recognizer = remember { TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build()) }
-    val translator = remember {
-        Translation.getClient(TranslatorOptions.Builder().setSourceLanguage(TranslateLanguage.CHINESE).setTargetLanguage(TranslateLanguage.PERSIAN).build())
-    }
+    val translator = remember { Translation.getClient(TranslatorOptions.Builder().setSourceLanguage(TranslateLanguage.CHINESE).setTargetLanguage(TranslateLanguage.PERSIAN).build()) }
 
-    DisposableEffect(Unit) {
-        onDispose { recognizer.close(); translator.close() }
-    }
+    DisposableEffect(Unit) { onDispose { recognizer.close(); translator.close() } }
 
     fun processUri(uri: Uri) {
         scope.launch {
@@ -283,9 +268,8 @@ private fun TranslateScreen(modifier: Modifier) {
                 recognizedText = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text.trim()
                 translatedText = ""
                 message = if (recognizedText.isBlank()) "متن چینی پیدا نشد." else "متن شناسایی شد."
-            } catch (e: Exception) {
-                message = "خطا در OCR: ${e.message ?: "نامشخص"}"
-            } finally { busy = false }
+            } catch (e: Exception) { message = "خطا در OCR: ${e.message ?: "نامشخص"}" }
+            finally { busy = false }
         }
     }
 
@@ -299,42 +283,26 @@ private fun TranslateScreen(modifier: Modifier) {
                     modelReady = true
                 }
                 translatedText = translator.translate(recognizedText).await()
-            } catch (e: Exception) {
-                message = "ترجمه انجام نشد: ${e.message ?: "نامشخص"}"
-            } finally { busy = false }
+            } catch (e: Exception) { message = "ترجمه انجام نشد: ${e.message ?: "نامشخص"}" }
+            finally { busy = false }
         }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let(::processUri) }
-
     LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("مترجم تصویری چینی", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("یک عکس از نوشته چینی انتخاب کنید.") }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { galleryLauncher.launch("image/*") }) { Text("انتخاب عکس") }
-                Button(onClick = { translate() }, enabled = recognizedText.isNotBlank() && !busy) { Text("ترجمه") }
-            }
-        }
-        imageBitmap?.let { bitmap ->
-            item { Image(bitmap.asImageBitmap(), "تصویر انتخاب‌شده", Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp)), contentScale = ContentScale.Crop) }
-        }
-        if (recognizedText.isNotBlank()) {
-            item {
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                    Text("متن چینی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(recognizedText)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { copy(context, recognizedText) }) { Text("کپی") }
-                        TextButton(onClick = { speakChinese(context, recognizedText) }) { Text("🔊") }
-                    }
-                }}
-            }
-        }
-        if (translatedText.isNotBlank()) {
-            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                Text("ترجمه فارسی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(translatedText)
-                TextButton(onClick = { copy(context, translatedText) }) { Text("کپی") }
-            }}}
-        }
+        item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { galleryLauncher.launch("image/*") }) { Text("انتخاب عکس") }
+            Button(onClick = { translate() }, enabled = recognizedText.isNotBlank() && !busy) { Text("ترجمه") }
+        }}
+        imageBitmap?.let { bitmap -> item { Image(bitmap.asImageBitmap(), "تصویر انتخاب‌شده", Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp)), contentScale = ContentScale.Crop) } }
+        if (recognizedText.isNotBlank()) item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+            Text("متن چینی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(recognizedText)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TextButton(onClick = { copy(context, recognizedText) }) { Text("کپی") }; TextButton(onClick = { speakChinese(context, recognizedText) }) { Text("🔊") } }
+        }}}
+        if (translatedText.isNotBlank()) item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+            Text("ترجمه فارسی", fontWeight = FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(translatedText); TextButton(onClick = { copy(context, translatedText) }) { Text("کپی") }
+        }}}
         if (message.isNotBlank()) item { Text(message) }
         if (busy) item { Text("در حال پردازش…") }
     }
@@ -345,15 +313,13 @@ private fun PhraseScreen(modifier: Modifier) {
     val context = LocalContext.current
     LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("عبارات کاربردی", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("بیش از ۳۰ عبارت برای سفر، خرید و تجارت") }
-        items(phrases) { phrase ->
-            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                Text(phrase.zh, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Text(phrase.pinyin, color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.height(4.dp)); Text(phrase.fa)
-                Text(phrase.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { speakChinese(context, phrase.zh) }) { Text("🔊 تلفظ") }
-            }}
-        }
+        items(phrases) { phrase -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+            Text(phrase.zh, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(phrase.pinyin, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(4.dp)); Text(phrase.fa)
+            Text(phrase.category, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { speakChinese(context, phrase.zh) }) { Text("🔊 تلفظ") }
+        }}}
     }
 }
 
@@ -365,31 +331,19 @@ private fun MetroScreen(modifier: Modifier) {
     ScenicBackground {
         LazyColumn(modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Text("نقشه مترو ۵ شهر مهم چین", fontSize = 24.sp, fontWeight = FontWeight.Bold); Text("نقشه‌ها شماتیک و مناسب راهنمای سریع هستند.") }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    metroCities.forEachIndexed { index, item ->
-                        TextButton(onClick = { selectedCity = index }) { Text(if (selectedCity == index) "● ${item.name}" else item.name) }
-                    }
-                }
-            }
-            item {
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-                    Text("${city.name}  ${city.zh}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    MetroMap(city)
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { openUrl(context, city.mapUrl) }) { Text("نقشه به‌روز آنلاین") }
-                    }
-                    Text("منبع نقشه به‌روز: ${city.mapUrl}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }}
-            }
-            item {
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-                    Text("ایستگاه‌های کلیدی", fontWeight = FontWeight.Bold)
-                    city.lines.forEach { line -> Text("خط ${line.name}: ${line.stations.joinToString(" ← ")}", fontSize = 13.sp) }
-                }}
-            }
+            item { Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                metroCities.forEachIndexed { index, item -> TextButton(onClick = { selectedCity = index }) { Text(if (selectedCity == index) "● ${item.name}" else item.name) } }
+            }}
+            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
+                Text("${city.name}  ${city.zh}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp)); MetroMap(city); Spacer(Modifier.height(8.dp))
+                Button(onClick = { openUrl(context, city.mapUrl) }) { Text("نقشه به‌روز آنلاین") }
+                Text("منبع نقشه: ${city.mapUrl}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }}}
+            item { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
+                Text("ایستگاه‌های کلیدی", fontWeight = FontWeight.Bold)
+                city.lines.forEach { line -> Text("خط ${line.name}: ${line.stations.joinToString(" ← ")}", fontSize = 13.sp) }
+            }}}
         }
     }
 }
@@ -398,15 +352,15 @@ private fun MetroScreen(modifier: Modifier) {
 private fun MetroMap(city: MetroCity) {
     Canvas(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(18.dp)).background(Color.White)) {
         city.lines.forEach { line ->
-            val pts = line.route.map { Offset(it.first * size.width, it.second * size.height) }
-            for (i in 0 until pts.size - 1) {
-                drawLine(line.color, pts[i], pts[i + 1], 10f, StrokeCap.Round)
-                drawLine(Color.White, pts[i], pts[i + 1], 3f, StrokeCap.Round)
+            val points = line.route.map { Offset(it.first * size.width, it.second * size.height) }
+            for (i in 0 until points.size - 1) {
+                drawLine(line.color, points[i], points[i + 1], 10f, StrokeCap.Round)
+                drawLine(Color.White, points[i], points[i + 1], 3f, StrokeCap.Round)
             }
-            pts.forEachIndexed { i, p ->
-                drawCircle(Color.White, 7f, p)
-                drawCircle(line.color, 5f, p)
-                if (i % 2 == 0) drawCircle(line.color.copy(alpha = .18f), 15f, p, style = Stroke(width = 2f))
+            points.forEachIndexed { index, point ->
+                drawCircle(Color.White, 7f, point)
+                drawCircle(line.color, 5f, point)
+                if (index % 2 == 0) drawCircle(line.color.copy(alpha = .18f), 15f, point, style = Stroke(width = 2f))
             }
         }
         drawRect(Color(0xFFEFEFEF), style = Stroke(width = 2f))
@@ -418,13 +372,10 @@ private fun ChinaScreen(modifier: Modifier) {
     ScenicBackground {
         LazyColumn(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Text("شهرهای مهم چین", fontSize = 24.sp, fontWeight = FontWeight.Bold) }
-            items(cities) { city ->
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                    Text("${city.fa}  ${city.zh}", fontSize = 21.sp, fontWeight = FontWeight.Bold)
-                    Text(city.en, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(6.dp)); Text(city.desc)
-                }}
-            }
+            items(cities) { city -> Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+                Text("${city.fa}  ${city.zh}", fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                Text(city.en, color = MaterialTheme.colorScheme.primary); Spacer(Modifier.height(6.dp)); Text(city.desc)
+            }}}
         }
     }
 }
