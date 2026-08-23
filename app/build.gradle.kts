@@ -15,6 +15,17 @@ android {
         versionName = "0.5.0"
     }
 
+    buildTypes {
+        release {
+            // Produce a much smaller installable test APK. It is signed with the
+            // standard debug key so the generated GitHub Release APK can be installed directly.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
     buildFeatures { compose = true }
 
     packaging {
@@ -31,8 +42,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
 
-    // Use the Google Play services OCR client so the language model is downloaded
-    // on demand instead of bundling the Chinese OCR model into every APK.
+    // Download the Chinese OCR model on demand instead of bundling it in the APK.
     implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
