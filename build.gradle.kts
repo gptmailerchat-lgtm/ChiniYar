@@ -12,10 +12,3 @@ buildscript {
         classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.21")
     }
 }
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
