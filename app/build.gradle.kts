@@ -11,18 +11,18 @@ android {
         applicationId = "com.chiniyar.app"
         minSdk = 23
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.5.0"
+        versionCode = 6
+        versionName = "0.6.0"
     }
 
     buildTypes {
         release {
-            // Produce a much smaller installable test APK. It is signed with the
-            // standard debug key so the generated GitHub Release APK can be installed directly.
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Keep the release APK installable and runtime-safe for ML Kit OCR.
+            // R8 full-mode can strip classes used reflectively by ML Kit and cause
+            // release-only NullPointerExceptions.
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -42,7 +42,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
 
-    // Download the Chinese OCR model on demand instead of bundling it in the APK.
+    // Chinese OCR model is downloaded through Google Play Services when needed.
     implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
